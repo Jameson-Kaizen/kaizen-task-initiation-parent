@@ -95,6 +95,19 @@
   .bartrack{height:9px;border-radius:999px;background:var(--soft);overflow:hidden;}
   .barfill{height:100%;border-radius:999px;transition:width .6s ease;}
   .blendnote{font-size:14px;color:var(--muted);margin:4px 0 0;}
+  .patterns-h{font-size:13px;font-weight:800;color:var(--ink);text-transform:uppercase;letter-spacing:.05em;margin:22px 0 4px;padding-top:16px;border-top:2px solid var(--line);}
+  .patterns-sub{font-size:13.5px;color:var(--muted);margin:0 0 12px;}
+  .tabs{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 14px;}
+  .tab{background:var(--soft);border:1.5px solid var(--line);border-radius:999px;padding:8px 15px;font-size:13.5px;font-weight:700;color:var(--gd);cursor:pointer;font-family:inherit;transition:background .1s,border-color .1s,color .1s;}
+  .tab:hover{background:#e6f1ea;border-color:var(--g);}
+  .tab.active{background:var(--g);color:#fff;border-color:var(--gd);}
+  .tab .pct{font-weight:800;opacity:.75;margin-left:6px;font-size:12.5px;}
+  .tab-quote{font-size:15px;font-style:italic;color:var(--muted);margin:0 0 8px;}
+  .tab-thesis{font-size:16px;color:var(--gd);font-weight:700;margin:0 0 10px;}
+  .tab-def{font-size:15.5px;margin:0 0 12px;}
+  .attrs{margin:0 0 16px;padding:0;list-style:none;}
+  .attrs li{position:relative;padding:0 0 0 20px;margin:0 0 7px;font-size:14.5px;}
+  .attrs li:before{content:"";position:absolute;left:2px;top:8px;width:7px;height:7px;border-radius:50%;background:var(--g);}
   .note{font-size:14px;background:#fbf6ec;border:1px solid #ecdcbd;border-radius:12px;padding:12px 15px;margin:16px 0 0;}
   .ai{margin:18px 0;background:var(--soft);border:1px solid var(--line);border-radius:14px;padding:16px 18px;}
   .ai-head{font-size:12px;font-weight:700;color:var(--gd);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;}
@@ -170,6 +183,12 @@
       <div class="ai-body" id="ai-body"></div>
     </div>
     <div class="body" id="r-body"></div>
+    <div id="r-patterns" hidden>
+      <div class="patterns-h">Explore your top patterns</div>
+      <p class="patterns-sub" id="r-patterns-sub"></p>
+      <div class="tabs" id="r-tabs" role="tablist"></div>
+      <div class="body" id="r-panel"></div>
+    </div>
     <div class="cta">
       <p>Want help getting your child started without the daily battle? Book a free 30 minute consult. We will look at their pattern with you, hear what is going on at home, and tell you honestly whether we think we are a fit.</p>
       <a class="btn" id="r-book" href="#" target="_blank" rel="noopener">Explore Coaching</a>
@@ -204,6 +223,13 @@
   var POSITIVE={name:"Starting May Not Be the Main Hurdle",thesis:"Based on your answers, getting started does not look like the main thing standing in {CP} way.",body:"What this likely means\nThat is genuinely useful to know, because it means your energy is better spent elsewhere. At this age, other common bottlenecks include working memory, emotional regulation, managing transitions, a shaky sense of time, and cognitive flexibility, which is the ability to shift gears when a plan changes. None of that means everything is easy. It means the thing worth looking at is probably a different executive function skill, and pinning down which one is the fastest path to real change."};  // {name,thesis,body}
   var SPLITCOPY="That does not mean either of you is wrong. It usually means the issue is not only about getting started. It may involve the home environment, the relationship, anxiety, sensory load, or something specific to home. Sometimes the gap means home is simply harder, because home has less built-in structure. Sometimes it means something specific at home is the trigger. Often it is both. What it almost never means is that {C} is \"fine and you are overreacting,\" or \"broken and the school missed it.\""; // home/school overlay body
   // question kinds: "arch" (option index = archetype 0..3), "impact" (option index = impact 3..0), "split" (even/home/school/none)
+  // Per-archetype definition + hallmark signs, shown at the top of each results tab.
+  var ARCHX={
+    "the-big-task-shutdown":{def:"The Big Task Shutdown is a child who freezes when a task looks big. Faced with something long, multi-step, or open-ended, the whole thing lands as a wall, and the brain protects itself by shutting down rather than starting. It can look like avoidance, but it is overwhelm, and it eases the moment the task gets broken down.",attrs:["Freezes or shuts down at long or multi-step tasks","Says 'it's too much' or 'I can't' before starting","Does far better once the task is broken into small pieces","Big projects and blank pages are the hardest"]},
+    "the-not-yet-kid":{def:"The Not-Yet Kid means to start and just does not, yet. 'In a minute' becomes another minute, and the task keeps drifting. This is task initiation, the specific skill of shifting from intention into action. The intention is real; the switch to get going is the hard part.",attrs:["'In a minute' that never quite arrives","Long stretches of getting-ready without starting","Genuinely means to do it, but stalls at the start","Usually fine once they are actually underway"]},
+    "the-interest-driven-brain":{def:"The Interest-Driven Brain starts easily when something is interesting or urgent, and stalls hard when it is boring. The engine runs on novelty and stakes, not on 'because you have to.' This is a motivation-and-activation pattern, not defiance, and dull tasks are the ones that stall.",attrs:["Dives into fun or urgent tasks, stalls on dull ones","Last-minute urgency is what finally gets them going","Effort swings widely by how interesting the task is","'Boring' is the real barrier, not the difficulty"]},
+    "the-stuck-on-choosing-kid":{def:"The Stuck-on-Choosing Kid gets caught before the work even begins, at the decision of where or how to start. With several ways in and no clear first move, they stall out weighing options. This is a decision-making bottleneck, and it clears the moment someone narrows the choices.",attrs:["Freezes at 'where do I even start'","Gets stuck weighing options instead of beginning","Too many choices lead to no choice at all","Starts fine once the first step is picked for them"]}
+  };
   var QUESTIONS=[
     {kind:"arch",text:"When you ask {C} to start something they've been avoiding, what usually happens first?",options:["They freeze, melt down, or seem overwhelmed by the whole thing.","They say \"in a minute\" and keep negotiating the conditions.","They drift toward something more fun and tune you out.","They look unsure and ask \"what do I do first?\""]},
     {kind:"arch",text:"Picture {C} at the start of homework or a chore. The first five minutes usually look like...",options:["Still trying to begin. The task feels too big to step into.","Rearranging their setup or hunting for the \"right\" supplies.","Doing literally anything else that feels more interesting.","Staring at the work, stuck on where to even begin."]},
@@ -301,12 +327,15 @@
       $("r-sub").textContent=cap(POSITIVE.thesis);
       $("r-driver").hidden=true;
       $("r-body").innerHTML=renderBody(POSITIVE.body);
+      $("r-patterns").hidden=true;
     } else {
       var p=ARCH[LAST.primary];
       $("r-name").textContent=p.name;
-      $("r-sub").textContent=cap(p.thesis);
-      $("r-driver").hidden=false; $("r-driver").innerHTML="<b>What's underneath it:</b> "+tok(p.driver)+".";
-      $("r-body").innerHTML=renderBody(p.body);
+      $("r-sub").textContent="";
+      $("r-driver").hidden=true;
+      $("r-body").innerHTML="";
+      $("r-patterns").hidden=false;
+      buildPatternTabs();
     }
     var bars=$("r-bars"); bars.innerHTML="";
     var order=LAST.counts.map(function(c,i){return {i:i,c:c,pct:LAST.pct[i]};}).sort(function(a,b){return b.c-a.c||a.i-b.i;});
@@ -327,6 +356,43 @@
     } else { $("r-note").hidden=true; }
     var bk=$("r-book"); bk.href=BOOKING_URL;
     bk.addEventListener("click",function(){ track("cta_click",{location:"results"}); if(window.fbq) fbq("trackCustom","BookingClick"); });
+  }
+
+  function topThree(){
+    var arr=LAST.totals||LAST.counts;
+    return arr.map(function(t,i){return {i:i,t:t,pct:LAST.pct[i]};})
+      .sort(function(a,b){return b.t-a.t||a.i-b.i;})
+      .filter(function(o){ return o.i===LAST.primary || o.t>0; })
+      .slice(0,3);
+  }
+  function buildPatternTabs(){
+    var top=topThree(); var tabs=$("r-tabs"); tabs.innerHTML="";
+    var sub=$("r-patterns-sub"); if(sub) sub.textContent=(top.length>1)?"Most kids are a blend. Tap through your top patterns to read each one.":"";
+    top.forEach(function(o,k){
+      var b=document.createElement("button"); b.type="button"; b.className="tab"+(k===0?" active":"");
+      b.setAttribute("role","tab"); b.setAttribute("aria-selected",k===0?"true":"false");
+      b.innerHTML=ARCH[o.i].name+'<span class="pct">'+o.pct+'%</span>';
+      b.addEventListener("click",function(){ selectPattern(o.i,b); track("pattern_tab",{archetype:ARCH[o.i].slug}); });
+      tabs.appendChild(b);
+    });
+    if(top.length) selectPattern(top[0].i, tabs.firstChild);
+  }
+  function selectPattern(i,btn){
+    var kids=$("r-tabs").children;
+    [].forEach.call(kids,function(c){ c.classList.remove("active"); c.setAttribute("aria-selected","false"); });
+    if(btn){ btn.classList.add("active"); btn.setAttribute("aria-selected","true"); }
+    var a=ARCH[i]; var subtitle=a.quote||a.pattern||"";
+    var html="";
+    if(subtitle) html+='<p class="tab-quote">'+tok(subtitle)+'</p>';
+    if(a.thesis) html+='<p class="tab-thesis">'+cap(a.thesis)+'</p>';
+    var x=(typeof ARCHX!=="undefined" && ARCHX[a.slug]) ? ARCHX[a.slug] : null;
+    if(x && x.def) html+='<p class="tab-def">'+tok(x.def)+'</p>';
+    if(x && x.attrs && x.attrs.length){ html+='<div class="sec-h">Common signs</div><ul class="attrs">';
+      x.attrs.forEach(function(at){ html+='<li>'+tok(at)+'</li>'; }); html+='</ul>'; }
+    if(a.driver) html+='<div class="driver"><b>What\'s underneath:</b> '+tok(a.driver)+'</div>';
+    else if(a.ef) html+='<div class="driver"><b>Connects to:</b> the executive function skill of '+tok(a.ef)+'.</div>';
+    if(a.body) html+=renderBody(a.body);
+    $("r-panel").innerHTML=html;
   }
 
   function emailValid(v){ return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v); }
